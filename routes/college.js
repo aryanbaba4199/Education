@@ -2,7 +2,7 @@ const express = require('express');
 
 const {createCollege, createCourse,
     getCollege, getCourse, createSupport, getSupport, getacollege, getDistancefromHome,
-    getSlide, createSlide,
+    getSlide, createSlide, adminDashboard,
 }  = require('../controller/collegeController');
 const router = express.Router();
 router.post('/ccollege', createCollege);
@@ -15,5 +15,6 @@ router.get('/gcollegebyid/:id', getacollege)
 router.post('/distance', getDistancefromHome)
 router.post('/cslide', createSlide)
 router.get('/gslide', getSlide)
+router.get('/dashboard', adminDashboard)
 
 module.exports = router;

@@ -2,6 +2,7 @@ const College = require('../model/college');
 const Course = require('../model/course');
 const Support = require('../model/support');
 const Slide = require('../model/slide');
+const User = require('../model/user');
 const axios = require('axios');
 
 require('dotenv').config();
@@ -160,6 +161,7 @@ exports.getDistancefromHome = async (req, res, next) => {
       if (!distanceResult.success) {
           return res.status(400).json({ error: distanceResult.error });
       }
+      
 
       return res.status(200).json(distanceResult.distance); // Convert meters to km
   } catch (error) {
@@ -184,6 +186,24 @@ exports.getSlide = async(req, res, next) => {
       return res.status(200).json(slides);
   }catch(e){
       console.error('Error in getting slide', e);
+      next(e);
+  }
+};
+
+exports.adminDashboard = async(req, res, next) => {
+  try{
+      const colleges = await College.countDocuments();
+      const courses = await Course.countDocuments();
+      const supports = await Support.countDocuments();
+      const slides = await Slide.countDocuments();
+      const users = await User.countDocuments();
+      const formData = {
+        colleges, courses, users, supports, slides
+      }
+
+      return res.status(200).json(formData);
+  }catch(e){
+      console.error('Error in admin dashboard', e);
       next(e);
   }
 };
