@@ -7,10 +7,7 @@ const userSchema = new mongoose.Schema({
         minlength: 3,
         maxlength: 50
     },
-    email: {
-        type: String,
-        sparse: true
-    },
+   
     mobile : {
         type: String,
         required: [true, 'Mobile number is required'],

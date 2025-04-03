@@ -169,6 +169,28 @@ exports.getDistancefromHome = async (req, res, next) => {
   }
 };
 
+exports.suggestLocation = async(req, res, next) => {
+  const { input, type = 'geocode' } = req.query; // 'geocode' for address, '(cities)' for mainCity
+  if (!input) return res.status(400).json({ error: 'Input is required' });
+
+  try {
+    const response = await axios.get(
+      'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+      {
+        params: {
+          input,
+          types: type,
+          key: process.env.MAP_API,
+        },
+      }
+    );
+    res.json(response.data);
+  }catch(e){
+    console.error('Error in suggesting location', e);
+    next(e);
+  }
+}
+
 exports.createSlide = async(req, res, next) => {
   try {
       console.log(req.body);
