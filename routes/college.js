@@ -2,7 +2,7 @@ const express = require('express');
 
 const {createCollege, createCourse,
     getCollege, getCourse, createSupport, getSupport, getacollege, getDistancefromHome,
-    getSlide, createSlide, adminDashboard, suggestLocation, removeCollge,
+    getSlide, createSlide, adminDashboard, suggestLocation, removeCollge, removeCourse,
 }  = require('../controller/collegeController');
 const router = express.Router();
 router.post('/ccollege', createCollege);
@@ -18,5 +18,6 @@ router.get('/gslide', getSlide)
 router.get('/dashboard', adminDashboard)
 router.get('/suggestLocation', suggestLocation)
 router.delete('/dcollege/:collegId', removeCollge)
+router.delete('/dcourse/:courseId', removeCourse)
 
 module.exports = router;

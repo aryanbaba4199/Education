@@ -98,6 +98,17 @@ exports.removeCollge = async(req, res, next)=>{
   }
 }
 
+exports.removeCourse = async(req, res, next) => {
+  try{
+        const course = await Course.findByIdAndDelete(req.params.courseId);
+        if(!course) return res.status(404).json({message: 'Course not found'});
+        return res.status(200).json({message: 'Course deleted successfully'});
+    }catch(e){
+        console.error('Error in deleting course', e);
+        next(e);
+    }
+}
+
 
 
 exports.createCourse = async(req, res, next) => {
