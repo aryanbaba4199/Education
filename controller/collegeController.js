@@ -87,6 +87,17 @@ exports.getacollege = async(req, res, next) => {
   }
 } 
 
+exports.removeCollge = async(req, res, next)=>{
+  try{
+    const college = await College.findByIdAndDelete(req.params.collegId);
+    if(!college) return res.status(404).json({message: 'College not found'});
+    return res.status(200).json({message: 'College deleted successfully'});
+  }catch(e){
+    console.error('Error in deleting college', e);
+    next(e);
+  }
+}
+
 
 
 exports.createCourse = async(req, res, next) => {

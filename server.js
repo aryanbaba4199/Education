@@ -14,7 +14,7 @@ app.use(express.json());
 
 app.use('/college', collegeRoutes)
 app.use('/users', userRoutes);
-app.use('/', (req, res)=> res.send('Connected to Server'))
+
 
 
 app.use(errorHandler);
