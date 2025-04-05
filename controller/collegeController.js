@@ -43,8 +43,8 @@ async function calculateDistance(address1, address2) {
   
   exports.createCollege = async (req, res, next) => {
     try {
-        console.log(req.body);
-      const { mainCity, address } = req.body; // Assuming these are in the request body
+        
+      const { mainCity, address } = req.body;
       const mainCityDistanceResult = await calculateDistance(mainCity, address);
   
       if (!mainCityDistanceResult.success) {

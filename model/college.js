@@ -12,6 +12,9 @@ const collegeSchema = new mongoose.Schema({
         required: [true, 'Description is required'],
 
     },
+    mobile : {
+        type: String,
+    },
 
     
     university : {
@@ -36,7 +39,8 @@ const collegeSchema = new mongoose.Schema({
     },
     news : [],
     images : [],
-    video : String,
+    video : [],
+    fees : [],
 
     courseIds : [{type : mongoose.Schema.ObjectId, ref : 'Course'}],
     supportIds : [{type : mongoose.Schema.ObjectId, ref : 'Support'}],
