@@ -1,7 +1,7 @@
 const User = require("../model/user");
 const jwt = require("jsonwebtoken");
 
-const generateToken = async (id) => {
+const generateToken = async(id) => {
   try {
     const token = await jwt.sign({ id: id }, "hfgsj", { expiresIn: "365d" });
     return token;

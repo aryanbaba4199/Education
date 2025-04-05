@@ -35,6 +35,8 @@ const collegeSchema = new mongoose.Schema({
         required : [true, 'Main City Distance is required'],
     },
     news : [],
+    images : [],
+    video : String,
 
     courseIds : [{type : mongoose.Schema.ObjectId, ref : 'Course'}],
     supportIds : [{type : mongoose.Schema.ObjectId, ref : 'Support'}],

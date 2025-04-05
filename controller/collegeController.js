@@ -9,7 +9,7 @@ require('dotenv').config();
 
 
 
-async function calculateDistance(address1, address2, vendorId, radius) {
+async function calculateDistance(address1, address2) {
     if (!address1 || !address2) {
       return { success: false, error: "Missing origin or destination address" };
     }
@@ -45,7 +45,7 @@ async function calculateDistance(address1, address2, vendorId, radius) {
     try {
         console.log(req.body);
       const { mainCity, address } = req.body; // Assuming these are in the request body
-      const mainCityDistanceResult = await calculateDistance(mainCity, address, vendorId, radius);
+      const mainCityDistanceResult = await calculateDistance(mainCity, address);
   
       if (!mainCityDistanceResult.success) {
         return res.status(400).json({ error: mainCityDistanceResult.error });
