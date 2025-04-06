@@ -41,6 +41,13 @@ const collegeSchema = new mongoose.Schema({
     images : [],
     video : [],
     fees : [],
+    path : String, 
+    campus_highlight : String, 
+    category : String,
+    createdAt : {
+        type : Date,
+        default : Date.now,
+    },
 
     courseIds : [{type : mongoose.Schema.ObjectId, ref : 'Course'}],
     supportIds : [{type : mongoose.Schema.ObjectId, ref : 'Support'}],
