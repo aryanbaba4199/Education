@@ -4,6 +4,7 @@ const {createCollege, createCourse,
     getCollege, getCourse, createSupport, getSupport, getacollege, getDistancefromHome,
     getSlide, createSlide, adminDashboard, suggestLocation, removeCollge, removeCourse,
      generateDescription, createCategory, getCategory, updateCategory, deleteCategory,
+     createTag, getTag, deleteTag, updateTag, 
 
 }  = require('../controller/collegeController');
 const router = express.Router();
@@ -28,5 +29,8 @@ router.post('/ccategory', createCategory)
 router.get('/gcategory', getCategory)
 router.delete('/dcategory/:id', deleteCategory)
 router.put('/ucategory/:catId', updateCategory)
-
+router.post('/ctag', createTag)
+router.get('/gtag', getTag)
+router.delete('/dtag/:id', deleteTag)
+router.put('/utag/:id', updateTag)
 module.exports = router;

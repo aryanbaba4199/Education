@@ -4,6 +4,7 @@ const Support = require("../model/support");
 const Slide = require("../model/slide");
 const User = require("../model/user");
 const Category = require("../model/category");
+const Tag = require("../model/tag");
 const axios = require("axios");
 
 require("dotenv").config();
@@ -354,6 +355,58 @@ exports.deleteCategory = async (req, res, next) => {
     }
 
     return res.status(200).json({ message: "Category deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+exports.createTag = async(req, res, next) => {
+  try {
+    const newTag = new Tag(req.body);
+    await newTag.save();
+    return res.status(200).json({ message: "Tag created successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+exports.getTag = async (req, res, next) => {
+  try {
+    const tags = await Tag.find();
+    return res.status(200).json(tags);
+  } catch (e) {
+    console.error("Error in getting tag", e);
+    next(e);
+  }
+}
+
+exports.updateTag = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const updatedTag = await Tag.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+
+    if (!updatedTag) {
+      return res.status(404).json({ message: "Tag not found" });
+    }
+
+    return res.status(200).json(updatedTag);
+  } catch (error) {
+    next(error);
+  }
+}
+
+exports.deleteTag = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const deletedTag = await Tag.findByIdAndDelete(id);
+
+    if (!deletedTag) {
+      return res.status(404).json({ message: "Tag not found" });
+    }
+
+    return res.status(200).json({ message: "Tag deleted successfully" });
   } catch (error) {
     next(error);
   }

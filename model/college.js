@@ -33,6 +33,9 @@ const collegeSchema = new mongoose.Schema({
         required : [true, 'Main City is required'],
         minlength: 1,
     },
+    rank : {
+        type : Number,
+    },
     mainCityDistance : {
         type : Number,
         required : [true, 'Main City Distance is required'],
@@ -41,6 +44,7 @@ const collegeSchema = new mongoose.Schema({
     images : [],
     video : [],
     fees : [],
+    selectedTags : [],
     path : String, 
     campus_highlight : String, 
     category : String,
