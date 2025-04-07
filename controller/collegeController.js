@@ -70,7 +70,7 @@ exports.createCollege = async (req, res, next) => {
 
 exports.getCollege = async (req, res, next) => {
   try {
-    const college = await College.find();
+    const college = await College.find().sort({rank : 1});
 
     return res.status(200).json(college);
   } catch (error) {
@@ -90,6 +90,17 @@ exports.getacollege = async (req, res, next) => {
     next(e);
   }
 };
+
+exports.updateCollege = async(req, res, next) => {
+  try{
+    const updatedCollege = await College.findByIdAndUpdate(req.params.collegeId, req.body, { new: true });
+    if (!updatedCollege) return res.status(404).json({ message: "College not found" });
+    return res.status(200).json(updatedCollege);
+  }catch(e){
+    console.error("Error in updating college", e);
+    next(e);
+  }
+}
 
 exports.removeCollge = async (req, res, next) => {
   try {

@@ -46,7 +46,7 @@ const collegeSchema = new mongoose.Schema({
     fees : [],
     selectedTags : [],
     path : String, 
-    campus_highlight : String, 
+    campus_Highlight : String, 
     category : String,
     createdAt : {
         type : Date,

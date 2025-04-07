@@ -1,16 +1,21 @@
 const express = require('express');
 
+const {createAppDetails, getAppDetails, updateDetails} = require('../controller/activityController');
+
 const {createCollege, createCourse,
     getCollege, getCourse, createSupport, getSupport, getacollege, getDistancefromHome,
     getSlide, createSlide, adminDashboard, suggestLocation, removeCollge, removeCourse,
      generateDescription, createCategory, getCategory, updateCategory, deleteCategory,
-     createTag, getTag, deleteTag, updateTag, 
+     createTag, getTag, deleteTag, updateTag, updateCollege,
 
 }  = require('../controller/collegeController');
 const router = express.Router();
+
+
 router.post('/ccollege', createCollege);
 router.post('/ccourse', createCourse);
 router.get('/gcollege', getCollege)
+router.put('/ucollege/:collegeId', updateCollege)
 router.get('/gcourse', getCourse)
 router.post('/csupport', createSupport)
 router.get('/gsupport', getSupport)
@@ -33,4 +38,9 @@ router.post('/ctag', createTag)
 router.get('/gtag', getTag)
 router.delete('/dtag/:id', deleteTag)
 router.put('/utag/:id', updateTag)
+
+router.post('/cappdetails', createAppDetails);
+router.get('/gappdetails', getAppDetails);
+router.put('/uappdetails/:id', updateDetails);
+
 module.exports = router;
