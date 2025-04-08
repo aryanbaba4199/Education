@@ -5,6 +5,7 @@ const Slide = require("../model/slide");
 const User = require("../model/user");
 const Category = require("../model/category");
 const Tag = require("../model/tag");
+const FeeTag = require('../model/FeesTags')
 const axios = require("axios");
 
 require("dotenv").config();
@@ -48,7 +49,9 @@ async function calculateDistance(address1, address2) {
 
 exports.createCollege = async (req, res, next) => {
   try {
-    const { mainCity, address } = req.body;
+    const { mainCity, address, rank } = req.body;
+
+    // Step 1: Calculate distance
     const mainCityDistanceResult = await calculateDistance(mainCity, address);
 
     if (!mainCityDistanceResult.success) {
@@ -56,17 +59,28 @@ exports.createCollege = async (req, res, next) => {
     }
 
     const mainCityDistance = mainCityDistanceResult.distance;
-    const formData = { ...req.body, mainCityDistance };
 
+    // Step 2: Shift other colleges' rank if conflict exists
+    if (typeof rank === "number") {
+      await College.updateMany(
+        { rank: { $gte: rank } },
+        { $inc: { rank: 1 } }
+      );
+    }
+
+    // Step 3: Create new college
+    const formData = { ...req.body, mainCityDistance };
     const college = new College(formData);
     await college.save();
 
-    console.log("College saved");
+    console.log("College saved with unique rank");
     res.status(201).json({ college });
+
   } catch (error) {
     next(error);
   }
 };
+
 
 exports.getCollege = async (req, res, next) => {
   try {
@@ -317,6 +331,54 @@ Keep it around 300 words. Do not include fee amounts or irrelevant data.
 
 
 
+exports.correctPath = async (req, res, next) => {
+  console.log('called')
+  try {
+    const { collegeName, university, address, reach } = req.body;
+
+    const prompt = `
+You are a travel guide assistant helping students reach a college. Based on the given college details and user experience, generate only the following 3 sections, each with 1-2 short lines:
+
+1. **By Train:** (Nearest station + how to reach the college)
+2. **By Bus:** (Known bus services or stands near the college)
+3. **Alternatives:** (Any other options like cabs, metro, or college shuttle)
+
+Do not add any introduction or conclusion. Only return the three sections exactly as shown.
+
+College Name: ${collegeName}
+University: ${university}
+Address: ${address}
+User's Note on How to Reach: ${reach}
+`;
+
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GPT_SECRET}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const guide = response.data.choices[0].message.content;
+    return res.status(200).json( guide );
+  } catch (e) {
+    console.error("Error in correctPath:", e);
+    next(e);
+  }
+};
+
+
+
+
+
 //---------------------------Category ----------------------------------
 
 exports.createCategory = async (req, res, next) => {
@@ -420,5 +482,34 @@ exports.deleteTag = async (req, res, next) => {
     return res.status(200).json({ message: "Tag deleted successfully" });
   } catch (error) {
     next(error);
+  }
+}
+
+
+exports.createFeesTag = async(req, res, next)=>{
+  try{
+    const newTag = new FeeTag(req.body);
+    await newTag.save()
+    return res.status(200).json(newTag)
+  }catch(e){
+    console.error('Error in creating tags ')
+  }
+}
+
+exports.getFeeTags = async(req, res, next)=>{
+  try{
+    const tags = await FeeTag.find()
+    return res.status(200).json(tags)
+  }catch(e){
+    console.error('Error in creating tags ')
+  }
+}
+
+exports.removeFeeTag = async(req, res, next)=>{
+  try{
+    await FeeTag.findByIdAndDelete(req.params.id)
+    return res.status(200).json({message : 'Deleted'})
+  }catch(e){
+    console.error('Error in removing', e)
   }
 }

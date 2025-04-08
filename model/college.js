@@ -52,7 +52,8 @@ const collegeSchema = new mongoose.Schema({
         type : Date,
         default : Date.now,
     },
-
+    fees : [],
+    feeTags : [],
     courseIds : [{type : mongoose.Schema.ObjectId, ref : 'Course'}],
     supportIds : [{type : mongoose.Schema.ObjectId, ref : 'Support'}],
 
