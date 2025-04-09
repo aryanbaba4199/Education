@@ -84,7 +84,9 @@ exports.createCollege = async (req, res, next) => {
 
 exports.getCollege = async (req, res, next) => {
   try {
-    const college = await College.find().sort({rank : 1});
+    const college = await College.find()
+    .select('name university address mainCityDistance images selectedTags location category')
+    .sort({rank : 1});
 
     return res.status(200).json(college);
   } catch (error) {
@@ -92,13 +94,16 @@ exports.getCollege = async (req, res, next) => {
   }
 };
 
+
 exports.getacollege = async (req, res, next) => {
   try {
     const college = await College.findById(req.params.id);
     if (!college) return res.status(404).json({ message: "College not found" });
     const courses = await Course.find({ _id: { $in: college.courseIds } });
     const supoorts = await Support.find({ _id: { $in: college.supportIds } });
-    return res.status(200).json({ college, courses, supoorts });
+    const tags = await Tag.find({_id : {$in : college.selectedTags}})
+    const category = (await Category.findById(college.category)).title
+    return res.status(200).json({ college, courses, supoorts, tags, category });
   } catch (e) {
     console.error("Error in getting college", e);
     next(e);
@@ -337,19 +342,26 @@ exports.correctPath = async (req, res, next) => {
     const { collegeName, university, address, reach } = req.body;
 
     const prompt = `
-You are a travel guide assistant helping students reach a college. Based on the given college details and user experience, generate only the following 3 sections, each with 1-2 short lines:
+You are a travel guide assistant helping students reach a college. Based on the given college details and the user's experience, generate ONLY the following 4 sections, each with 1–2 short lines:
 
+${reach.startsWith("Regenerate:") ? `🛠️ Note: The user requested a regeneration of the previous suggestions. Improve clarity and accuracy using all provided data.\n\n` : ""}
+
+If the user has shared a custom/local route (e.g., a unique train/bus that passes near the college), prioritize that route and place it at the top as "🧭 User Tip:".
+
+Return exactly these 4 sections (only if data is relevant):
 1. **By Train:** (Nearest station + how to reach the college)
 2. **By Bus:** (Known bus services or stands near the college)
-3. **Alternatives:** (Any other options like cabs, metro, or college shuttle)
+3. **By Flight:** (Nearest airport + how to reach the college)
+4. **Alternatives:** (Any other options like cabs, metro, or college shuttle)
 
-Do not add any introduction or conclusion. Only return the three sections exactly as shown.
+Do not include any introduction or conclusion. Just return the four sections exactly as labeled.
 
 College Name: ${collegeName}
 University: ${university}
 Address: ${address}
-User's Note on How to Reach: ${reach}
+User's Note on How to Reach: ${reach.replace("Regenerate:", "").trim()}
 `;
+
 
 
     const response = await axios.post(
