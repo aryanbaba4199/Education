@@ -11,6 +11,7 @@ const axios = require("axios");
 require("dotenv").config();
 
 async function calculateDistance(address1, address2) {
+  console.log(address1, address2)
   if (!address1 || !address2) {
     return { success: false, error: "Missing origin or destination address" };
   }
@@ -29,6 +30,8 @@ async function calculateDistance(address1, address2) {
     );
 
     const data = response.data;
+    console.log(data)
+    
     if (data.rows.length && data.rows[0].elements.length) {
       const element = data.rows[0].elements[0];
       if (element.status === "OK") {
@@ -50,6 +53,7 @@ async function calculateDistance(address1, address2) {
 exports.createCollege = async (req, res, next) => {
   try {
     const { mainCity, address, rank } = req.body;
+    console.log(mainCity, address)
 
     // Step 1: Calculate distance
     const mainCityDistanceResult = await calculateDistance(mainCity, address);
@@ -85,7 +89,7 @@ exports.createCollege = async (req, res, next) => {
 exports.getCollege = async (req, res, next) => {
   try {
     const college = await College.find()
-    .select('name university address mainCityDistance images selectedTags location category')
+    .select('name university address mainCityDistance images selectedTags location category courseIds fees supportIds')
     .sort({rank : 1});
 
     return res.status(200).json(college);
@@ -184,44 +188,66 @@ exports.getSupport = async (req, res, next) => {
 
 exports.getDistancefromHome = async (req, res, next) => {
   try {
-    const { add1, add2 } = req.body; // ✅ Remove JSON.parse()
-    console.log(add1, add2);
+    const { add1, add2, manualAddress } = req.body;
 
-    if (!add1 || !add2) {
-      console.log("no add1 or add2");
-      return res
-        .status(400)
-        .json({ error: "Missing origin or destination address" });
+    let sourceLocation = "";
+
+    if (manualAddress) {
+      sourceLocation = manualAddress;
+    } else if (typeof add2 === "object" && add2.latitude && add2.longitude) {
+      sourceLocation = `a location near latitude ${add2.latitude}, longitude ${add2.longitude} in Bihar, India`;
+    } else if (typeof add2 === "string") {
+      sourceLocation = add2;
+    } else {
+      return res.status(400).json({ message: "No valid source location provided." });
     }
 
-    // Reverse Geocode add2 (lat/lng) to get an address
-    const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${add2.latitude},${add2.longitude}&key=${process.env.MAP_API}`;
+    const prompt = `
+You're a travel assistant AI.
 
-    const geoResponse = await axios.get(geoUrl);
+User wants to go from **${sourceLocation}** to **${add1}**.
 
-    if (!geoResponse.data.results.length) {
-      return res
-        .status(400)
-        .json({ error: "Could not determine address from coordinates" });
-    }
+1. Estimate distance and say: "Distance from X to Y is approx Z km."
+2. List valid travel methods: Flight, Train, Road, or Alternative.
+3. Skip unrealistic options (like flights under 100km).
+4. Sort based on distance or convenience.
+5. Keep the response within 100 words.
+6. dont show lattitude and logtitude 
+7. show icons accordingly example : By train then Train logo 
 
-    const formattedAddress = geoResponse.data.results[0].formatted_address;
-    console.log(`User Location Address: ${formattedAddress}`);
 
-    // Call calculateDistance with readable address
-    const distanceResult = await calculateDistance(add1, formattedAddress);
-    console.log(
-      `Distance to ${formattedAddress}: ${distanceResult.distance} meters`
+Format:
+
+📍 **Distance:** ...
+🚀 **Ways to Reach:**
+1.  **By Road: ...**
+2. **Train: ...**
+3. **Flight: ...**
+`;
+
+    const gptRes = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GPT_SECRET}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
-    if (!distanceResult.success) {
-      return res.status(400).json({ error: distanceResult.error });
-    }
 
-    return res.status(200).json(distanceResult.distance); // Convert meters to km
-  } catch (error) {
-    next(error);
+    const reply = gptRes.data.choices[0].message.content;
+    return res.status(200).json(reply);
+  } catch (err) {
+    console.error("Error in getDistancefromHome", err);
+    next(err);
   }
 };
+
 
 exports.suggestLocation = async (req, res, next) => {
   const { input, type = "geocode" } = req.query; // 'geocode' for address, '(cities)' for mainCity
