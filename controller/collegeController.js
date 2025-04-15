@@ -6,6 +6,7 @@ const User = require("../model/user");
 const Category = require("../model/category");
 const Tag = require("../model/tag");
 const FeeTag = require('../model/FeesTags')
+const Prompt = require('../model/prompts')
 const axios = require("axios");
 
 require("dotenv").config();
@@ -202,34 +203,23 @@ exports.getDistancefromHome = async (req, res, next) => {
       return res.status(400).json({ message: "No valid source location provided." });
     }
 
-    const prompt = `
-You're a travel assistant AI.
+    // Get dynamic prompt from DB
+    const promptDoc = await Prompt.findOne({ title: 'distance' });
+    if (!promptDoc || !promptDoc.prompt) {
+      return res.status(500).json({ message: "Prompt not found in DB." });
+    }
 
-User wants to go from **${sourceLocation}** to **${add1}**.
+    // Replace variables in prompt string
+    const formattedPrompt = promptDoc.prompt
+      .replace(/\$\{sourceLocation\}/g, sourceLocation)
+      .replace(/\$\{add1\}/g, add1);
 
-1. Estimate distance and say: "Distance from X to Y is approx Z km."
-2. List valid travel methods: Flight, Train, Road, or Alternative.
-3. Skip unrealistic options (like flights under 100km).
-4. Sort based on distance or convenience.
-5. Keep the response within 100 words.
-6. dont show lattitude and logtitude 
-7. show icons accordingly example : By train then Train logo 
-
-
-Format:
-
-📍 **Distance:** ...
-🚀 **Ways to Reach:**
-1.  **By Road: ...**
-2. **Train: ...**
-3. **Flight: ...**
-`;
-
+    // Send to OpenAI
     const gptRes = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: formattedPrompt }],
         temperature: 0.7,
       },
       {
@@ -247,6 +237,7 @@ Format:
     next(err);
   }
 };
+
 
 
 exports.suggestLocation = async (req, res, next) => {
@@ -299,12 +290,14 @@ exports.adminDashboard = async (req, res, next) => {
     const supports = await Support.countDocuments();
     const slides = await Slide.countDocuments();
     const users = await User.countDocuments();
+    const prompts = await Prompt.countDocuments();
     const formData = {
       colleges,
       courses,
       users,
       supports,
       slides,
+      prompts,
     };
 
     return res.status(200).json(formData);
@@ -314,34 +307,90 @@ exports.adminDashboard = async (req, res, next) => {
   }
 };
 
+
+
+// CREATE
+exports.createPrompt = async (req, res, next) => {
+  try {
+    const { title, prompt } = req.body;
+    const newPrompt = new Prompt({ title, prompt });
+    await newPrompt.save();
+    return res.status(201).json({ success: true, data: newPrompt });
+  } catch (e) {
+    console.error('Error in creating prompt:', e);
+    next(e);
+  }
+};
+
+// READ / GET ALL
+exports.getPrompts = async (req, res, next) => {
+  try {
+    const prompts = await Prompt.find().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, data: prompts });
+  } catch (e) {
+    console.error('Error in getting prompts:', e);
+    next(e);
+  }
+};
+
+// UPDATE
+exports.updatePrompt = async (req, res, next) => {
+  try {
+    const { id, title, prompt } = req.body;
+    const updatedPrompt = await Prompt.findByIdAndUpdate(
+      id,
+      { title, prompt },
+      { new: true }
+    );
+    if (!updatedPrompt) {
+      return res.status(404).json({ success: false, message: 'Prompt not found' });
+    }
+    return res.status(200).json({ success: true, data: updatedPrompt });
+  } catch (e) {
+    console.error('Error in updating prompt:', e);
+    next(e);
+  }
+};
+
+// DELETE
+exports.deletePrompt = async (req, res, next) => {
+  try {
+    const { id } = req.body;
+    const deleted = await Prompt.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Prompt not found' });
+    }
+    return res.status(200).json({ success: true, message: 'Prompt deleted successfully' });
+  } catch (e) {
+    console.error('Error in deleting prompt:', e);
+    next(e);
+  }
+};
+
+
 exports.generateDescription = async (req, res, next) => {
   try {
     const { collegeName, university, address } = req.body;
-    const prompt = `
-You are an expert in education and content writing. Based on the following details, search the college on internet and write a detailed, structured, and positive 300-word description of the college. If the college is well-known, base the content on its reputation. If not, make up realistic but appealing details using common strengths of good colleges.
 
-College Name: ${collegeName}
-Address: ${address}
-University Affiliation: ${university}
+    // Get prompt from DB
+    const promptDoc = await Prompt.findOne({ title: 'discription' });
 
-✦ Write the content in the following format:
+    if (!promptDoc || !promptDoc.prompt) {
+      return res.status(500).json({ message: "Prompt not found in DB." });
+    }
 
-1. **College Overview:** (Talk about its reputation, experience, and approval from authorities like UGC, AICTE, etc. if applicable.)
-2. **Location & Accessibility:** (How students can reach the campus — metro, bus, or college transport. Mention nearby landmarks if relevant.)
-3. **Affordability & Courses:** (Mention if it's affordable or offers value-for-money education. Mention variety of programs if known.)
-4. **Campus Life & Facilities:** (Describe the campus, hostels, library, food, security, internet, extracurriculars.)
-5. **Academic Excellence:** (Mention faculty, tie-ups with hospitals or industries, results, and focus on practical learning.)
+    // Replace variables inside the prompt
+    const formattedPrompt = promptDoc.prompt
+      .replace(/\$\{collegeName\}/g, collegeName)
+      .replace(/\$\{university\}/g, university)
+      .replace(/\$\{address\}/g, address);
 
-Use an inspiring tone. Make it feel real, student-friendly, and trustworthy.
-
-Keep it around 300 words. Do not include fee amounts or irrelevant data.
-`;
-
+    // Call OpenAI
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: formattedPrompt }],
         temperature: 0.7,
       },
       {
@@ -351,6 +400,7 @@ Keep it around 300 words. Do not include fee amounts or irrelevant data.
         },
       }
     );
+
     const description = response.data.choices[0].message.content;
     return res.status(200).json(description);
   } catch (e) {
@@ -362,39 +412,39 @@ Keep it around 300 words. Do not include fee amounts or irrelevant data.
 
 
 
+
 exports.correctPath = async (req, res, next) => {
-  console.log('called')
+  console.log('called');
   try {
     const { collegeName, university, address, reach } = req.body;
 
-    const prompt = `
-You are a travel guide assistant helping students reach a college. Based on the given college details and the user's experience, generate ONLY the following 4 sections, each with 1–2 short lines:
+    // Fetch the prompt from DB
+    const promptDoc = await Prompt.findOne({ title: 'path' });
 
-${reach.startsWith("Regenerate:") ? `🛠️ Note: The user requested a regeneration of the previous suggestions. Improve clarity and accuracy using all provided data.\n\n` : ""}
+    if (!promptDoc || !promptDoc.prompt) {
+      return res.status(500).json({ message: "Prompt not found in DB." });
+    }
 
-If the user has shared a custom/local route (e.g., a unique train/bus that passes near the college), prioritize that route and place it at the top as "🧭 User Tip:".
+    // Format user reach input
+    const userNote = reach?.replace("Regenerate:", "").trim();
+    const regenerationNote = reach?.startsWith("Regenerate:")
+      ? `🛠️ Note: The user requested a regeneration of the previous suggestions. Improve clarity and accuracy using all provided data.\n\n`
+      : "";
 
-Return exactly these 4 sections (only if data is relevant):
-1. **By Train:** (Nearest station + how to reach the college)
-2. **By Bus:** (Known bus services or stands near the college)
-3. **By Flight:** (Nearest airport + how to reach the college)
-4. **Alternatives:** (Any other options like cabs, metro, or college shuttle)
+    // Inject values into the prompt
+    const formattedPrompt = promptDoc.prompt
+      .replace(/\$\{collegeName\}/g, collegeName)
+      .replace(/\$\{university\}/g, university)
+      .replace(/\$\{address\}/g, address)
+      .replace(/\$\{reach\.startsWith\("Regenerate:"\) \? `.*?` : ""\}/g, regenerationNote)
+      .replace(/\$\{reach\.replace\("Regenerate:", ""\)\.trim\(\)\}/g, userNote);
 
-Do not include any introduction or conclusion. Just return the four sections exactly as labeled.
-
-College Name: ${collegeName}
-University: ${university}
-Address: ${address}
-User's Note on How to Reach: ${reach.replace("Regenerate:", "").trim()}
-`;
-
-
-
+    // Call OpenAI
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: formattedPrompt }],
         temperature: 0.7,
       },
       {
@@ -406,7 +456,7 @@ User's Note on How to Reach: ${reach.replace("Regenerate:", "").trim()}
     );
 
     const guide = response.data.choices[0].message.content;
-    return res.status(200).json( guide );
+    return res.status(200).json(guide);
   } catch (e) {
     console.error("Error in correctPath:", e);
     next(e);

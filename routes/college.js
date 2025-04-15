@@ -7,7 +7,7 @@ const {createCollege, createCourse,
     getSlide, createSlide, adminDashboard, suggestLocation, removeCollge, removeCourse,
      generateDescription, createCategory, getCategory, updateCategory, deleteCategory,
      createTag, getTag, deleteTag, updateTag, updateCollege, correctPath,
-     createFeesTag, getFeeTags, removeFeeTag, 
+     createFeesTag, getFeeTags, removeFeeTag, getPrompts, createPrompt, updatePrompt, deletePrompt,
 
 }  = require('../controller/collegeController');
 const router = express.Router();
@@ -50,5 +50,10 @@ router.post('/correctpath', correctPath);
 router.get('/gftag', getFeeTags)
 router.post('/cftag', createFeesTag)
 router.delete('/rftag/:id', removeFeeTag)
+
+router.post('/cprompt', createPrompt);
+router.get('/gprompt', getPrompts);
+router.put('/uprompt', updatePrompt);
+router.delete('/rprompt', deletePrompt);
 
 module.exports = router;
