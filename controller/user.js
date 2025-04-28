@@ -65,6 +65,7 @@ exports.getAdmin = async (req, res, next) => {
       adminId: req.body.id,
       password: req.body.password,
     });
+    console.log(req.body)
     if (user) {
       const token = await generateToken(user._id);
       return res.status(200).json(token);
